@@ -76,6 +76,9 @@ case $OPTION in
 		while [[ $TCP != "y" && $TCP != "n" ]]; do
 			read -p "       Cloudflare's TLS Dynamic Record Resizing patch [y/n]: " -e TCP
 		done
+		while [[ $CACHEPURGE != "y" && $CACHEPURGE != "n" ]]; do
+			read -p "       ngx_cache_purge [y/n]: " -e CACHEPURGE
+		done
 		echo ""
 		echo "Choose your OpenSSL implementation :"
 		echo "   1) System's OpenSSL ($(openssl version | cut -c9-14))"
@@ -108,7 +111,7 @@ case $OPTION in
 		# Dependencies
 		echo -ne "       Installing dependencies      [..]\r"
 		apt-get update >> /tmp/nginx-autoinstall.log 2>&1
-		apt-get install build-essential ca-certificates wget curl libpcre3 libpcre3-dev autoconf unzip automake libtool tar git libssl-dev zlib1g-dev uuid-dev -y >> /tmp/nginx-autoinstall.log 2>&1
+		apt-get install build-essential ca-certificates wget curl libpcre3 libpcre3-dev autoconf unzip automake libtool tar git libssl-dev zlib1g-dev uuid-dev libgd-dev libgd-tools -y >> /tmp/nginx-autoinstall.log 2>&1
 
 		if [ $? -eq 0 ]; then
 			echo -ne "       Installing dependencies        [${CGREEN}OK${CEND}]\r"
@@ -237,7 +240,7 @@ case $OPTION in
 			echo -ne "       Downloading ngx_headers_more   [..]\r"
 			wget https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERMOD_VER}.tar.gz >> /tmp/nginx-autoinstall.log 2>&1
 			tar xaf v${HEADERMOD_VER}.tar.gz
-				
+
 			if [ $? -eq 0 ]; then
 				echo -ne "       Downloading ngx_headers_more   [${CGREEN}OK${CEND}]\r"
 				echo -ne "\n"
@@ -270,6 +273,24 @@ case $OPTION in
 				echo -ne "\n"
 			else
 				echo -e "       Downloading GeoIP databases    [${CRED}FAIL${CEND}]"
+				echo ""
+				echo "Please look at /tmp/nginx-autoinstall.log"
+				echo ""
+				exit 1
+			fi
+		fi
+
+		# Cache Purge
+		if [[ "$CACHEPURGE" = 'y' ]]; then
+			cd /usr/local/src/nginx/modules
+			echo -ne "       Downloading ngx_cache_purge    [..]\r"
+			git clone https://github.com/FRiCKLE/ngx_cache_purge >> /tmp/nginx-autoinstall.log 2>&1
+
+			if [ $? -eq 0 ]; then
+				echo -ne "       Downloading ngx_cache_purge   [${CGREEN}OK${CEND}]\r"
+				echo -ne "\n"
+			else
+				echo -e "       Downloading ngx_cache_purge    [${CRED}FAIL${CEND}]"
 				echo ""
 				echo "Please look at /tmp/nginx-autoinstall.log"
 				echo ""
@@ -338,7 +359,7 @@ case $OPTION in
 			echo -ne "       Downloading OpenSSL            [..]\r"
 			wget https://www.openssl.org/source/openssl-${OPENSSL_VER}.tar.gz >> /tmp/nginx-autoinstall.log 2>&1
 			tar xaf openssl-${OPENSSL_VER}.tar.gz
-			cd openssl-${OPENSSL_VER}	
+			cd openssl-${OPENSSL_VER}
 			if [ $? -eq 0 ]; then
 				echo -ne "       Downloading OpenSSL            [${CGREEN}OK${CEND}]\r"
 				echo -ne "\n"
@@ -393,7 +414,7 @@ case $OPTION in
 		cd /usr/local/src/nginx/nginx-${NGINX_VER}
 
 		# Modules configuration
-		# Common configuration 
+		# Common configuration
 		NGINX_OPTIONS="
 		--prefix=/etc/nginx \
 		--sbin-path=/usr/sbin/nginx \
@@ -416,7 +437,6 @@ case $OPTION in
 		--without-http_geo_module \
 		--without-http_split_clients_module \
 		--without-http_memcached_module \
-		--without-http_empty_gif_module \
 		--without-http_browser_module \
 		--with-threads \
 		--with-file-aio \
@@ -426,10 +446,11 @@ case $OPTION in
 		--with-http_auth_request_module \
 		--with-http_slice_module \
 		--with-http_stub_status_module \
-		--with-http_realip_module"
+		--with-http_realip_module \
+		--with-http_image_filter_module"
 
 		# Optional modules
-		# LibreSSL 
+		# LibreSSL
 		if [[ "$LIBRESSL" = 'y' ]]; then
 			NGINX_MODULES=$(echo $NGINX_MODULES; echo --with-openssl=/usr/local/src/nginx/modules/libressl-${LIBRESSL_VER})
 		fi
@@ -458,13 +479,18 @@ case $OPTION in
 		if [[ "$OPENSSL" = 'y' ]]; then
 			NGINX_MODULES=$(echo $NGINX_MODULES; echo "--with-openssl=/usr/local/src/nginx/modules/openssl-${OPENSSL_VER}")
 		fi
-	
+
+		# Cache Purge
+		if [[ "$CACHEPURGE" = 'y' ]]; then
+			NGINX_MODULES=$(echo $NGINX_MODULES; echo "--add-module=/usr/local/src/nginx/modules/ngx_cache_purge")
+		fi
+
 		# Cloudflare's TLS Dynamic Record Resizing patch
 		if [[ "$TCP" = 'y' ]]; then
 			echo -ne "       TLS Dynamic Records support    [..]\r"
 			wget https://raw.githubusercontent.com/cloudflare/sslconfig/master/patches/nginx__1.11.5_dynamic_tls_records.patch >> /tmp/nginx-autoinstall.log 2>&1
 			patch -p1 < nginx__1.11.5_dynamic_tls_records.patch >> /tmp/nginx-autoinstall.log 2>&1
-		        
+
 			if [ $? -eq 0 ]; then
 				echo -ne "       TLS Dynamic Records support    [${CGREEN}OK${CEND}]\r"
 				echo -ne "\n"
@@ -510,7 +536,7 @@ case $OPTION in
 		# Then we install \o/
 		echo -ne "       Installing Nginx               [..]\r"
 		make install >> /tmp/nginx-autoinstall.log 2>&1
-		
+
 		# remove debugging symbols
 		strip -s /usr/sbin/nginx
 
@@ -544,7 +570,7 @@ case $OPTION in
 			mkdir -p /var/cache/nginx
 		fi
 
-		# We add sites-* folders as some use them. /etc/nginx/conf.d/ is the vhost folder by defaultnginx 
+		# We add sites-* folders as some use them. /etc/nginx/conf.d/ is the vhost folder by defaultnginx
 		if [[ ! -d /etc/nginx/sites-available ]]; then
 			mkdir -p /etc/nginx/sites-available
 		fi

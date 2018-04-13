@@ -55,3 +55,7 @@ Add the path of the 2 GeoIP databases to your http block:
 geoip_country  /opt/geoip-db/GeoIP-Country.dat;
 geoip_city     /opt/geoip-db/GeoIP-City.dat;
 ```
+
+### Logrotate
+
+Nginx logs will rotate daily and seven times.

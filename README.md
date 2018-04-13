@@ -17,6 +17,7 @@ Compile and install Nginx from source with optionnal modules.
 - [Custom nginx.conf](https://github.com/Angristan/nginx-autoinstall/blob/master/conf/nginx.conf) (default does not work)
 - [Init script for systemd](https://github.com/Angristan/nginx-autoinstall/blob/master/conf/nginx.service) (not provided by default)
 - [Logrotate conf](https://github.com/Angristan/nginx-autoinstall/blob/master/conf/nginx-logrotate) (not provided by default)
+- Image filter module / empty_gif module for Matomo Analytics
 
 ### Optional modules/features
 
@@ -27,6 +28,7 @@ Compile and install Nginx from source with optionnal modules.
 - [ngx_headers_more](https://github.com/openresty/headers-more-nginx-module) (Custom HTTP headers)
 - [GeoIP](http://dev.maxmind.com/geoip/geoip2/geolite2/) (GeoIP module and databases)
 - [Cloudflare's TLS Dynamic Records Resizing patch](https://github.com/cloudflare/sslconfig/blob/master/patches/nginx__1.11.5_dynamic_tls_records.patch) (Optmize lantency and throughput for TLS exchanges)
+- [ngx_cache_purge](https://github.com/FRiCKLE/ngx_cache_purge) (Purge content from FastCGI, proxy, SCGI and uWSGI caches)
 
 ## Install Nginx
 
