@@ -13,9 +13,9 @@ if [[ "$EUID" -ne 0 ]]; then
 fi
 
 # Variables
-NGINX_MAINLINE_VER=1.13.12
+NGINX_MAINLINE_VER=1.15.2
 NGINX_STABLE_VER=1.14.0
-LIBRESSL_VER=2.7.2
+LIBRESSL_VER=2.7.4
 OPENSSL_VER=1.1.0h
 NPS_VER=1.13.35.2
 HEADERMOD_VER=0.33
@@ -72,6 +72,9 @@ case $OPTION in
 		done
 		while [[ $GEOIP != "y" && $GEOIP != "n" ]]; do
 			read -p "       GeoIP [y/n]: " -e GEOIP
+		done
+		while [[ $FANCYINDEX != "y" && $FANCYINDEX != "n" ]]; do
+			read -p "       Fancy index [y/n]: " -e FANCYINDEX
 		done
 		while [[ $TCP != "y" && $TCP != "n" ]]; do
 			read -p "       Cloudflare's TLS Dynamic Record Resizing patch [y/n]: " -e TCP
@@ -502,7 +505,13 @@ case $OPTION in
 				exit 1
 			fi
 		fi
-
+		
+		# Fancy index
+		if [[ "$FANCYINDEX" = 'y' ]]; then
+			git clone --quiet https://github.com/aperezdc/ngx-fancyindex.git /usr/local/src/nginx/modules/fancyindex >> /tmp/nginx-autoinstall.log 2>&1
+			NGINX_MODULES=$(echo $NGINX_MODULES; echo --add-module=/usr/local/src/nginx/modules/fancyindex)
+		fi
+		
 		# We configure Nginx
 		echo -ne "       Configuring Nginx              [..]\r"
 		./configure $NGINX_OPTIONS $NGINX_MODULES >> /tmp/nginx-autoinstall.log 2>&1
@@ -592,7 +601,16 @@ case $OPTION in
 			echo ""
 			exit 1
 		fi
-
+		
+		if [[ $(lsb_release -si) == "Debian" ]] || [[ $(lsb_release -si) == "Ubuntu" ]]
+		then
+			echo -ne "       Blocking nginx from APT        [..]\r"
+			cd /etc/apt/preferences.d/
+			echo -e "Package: nginx*\nPin: release *\nPin-Priority: -1" > nginx-block
+			echo -ne "       Blocking nginx from APT        [${CGREEN}OK${CEND}]\r"
+			echo -ne "\n"
+		fi
+		
 		# Removing temporary Nginx and modules files
 		echo -ne "       Removing Nginx files           [..]\r"
 		rm -r /usr/local/src/nginx >> /tmp/nginx-autoinstall.log 2>&1
@@ -652,6 +670,14 @@ case $OPTION in
 			echo -ne "       Removing log files             [..]\r"
 			rm -r /var/log/nginx >> /tmp/nginx-autoinstall.log 2>&1
 			echo -ne "       Removing log files             [${CGREEN}OK${CEND}]\r"
+			echo -ne "\n"
+		fi
+
+		if [[ $(lsb_release -si) == "Debian" ]] || [[ $(lsb_release -si) == "Ubuntu" ]]
+		then
+			echo -ne "       Unblock nginx package from APT [..]\r"
+			rm /etc/apt/preferences.d/nginx-block >> /tmp/nginx-autoinstall.log 2>&1
+			echo -ne "       Unblock nginx package from APT [${CGREEN}OK${CEND}]\r"
 			echo -ne "\n"
 		fi
 
