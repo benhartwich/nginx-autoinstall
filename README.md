@@ -14,9 +14,9 @@ Compile and install Nginx from source with optionnal modules.
 - Latest mainline or stable version, from source
 - Optional modules (see below)
 - Removed useless modules
-- [Custom nginx.conf](https://github.com/Angristan/nginx-autoinstall/blob/master/conf/nginx.conf) (default does not work)
-- [Init script for systemd](https://github.com/Angristan/nginx-autoinstall/blob/master/conf/nginx.service) (not provided by default)
-- [Logrotate conf](https://github.com/Angristan/nginx-autoinstall/blob/master/conf/nginx-logrotate) (not provided by default)
+- [Custom nginx.conf](https://github.com/benhartwich/nginx-autoinstall/blob/master/conf/nginx.conf) (default does not work)
+- [Init script for systemd](https://github.com/benhartwich/nginx-autoinstall/blob/master/conf/nginx.service) (not provided by default)
+- [Logrotate conf](https://github.com/benhartwich/nginx-autoinstall/blob/master/conf/nginx-logrotate) (not provided by default)
 - Image filter module / empty_gif module for Matomo Analytics
 
 ### Optional modules/features
@@ -27,6 +27,7 @@ Compile and install Nginx from source with optionnal modules.
 - [ngx_brotli](https://github.com/google/ngx_brotli) (Brotli compression algorithm)
 - [ngx_headers_more](https://github.com/openresty/headers-more-nginx-module) (Custom HTTP headers)
 - [GeoIP](http://dev.maxmind.com/geoip/geoip2/geolite2/) (GeoIP module and databases)
+- [Mod Security] (https://github.com/SpiderLabs/ModSecurity) (web application firewall)
 - [Cloudflare's TLS Dynamic Records Resizing patch](https://github.com/cloudflare/sslconfig/blob/master/patches/nginx__1.11.5_dynamic_tls_records.patch) (Optmize lantency and throughput for TLS exchanges)
 - [ngx_cache_purge](https://github.com/FRiCKLE/ngx_cache_purge) (Purge content from FastCGI, proxy, SCGI and uWSGI caches)
 - [ngx-fancyindex](https://github.com/aperezdc/ngx-fancyindex) (Fancy indexes module)
@@ -35,12 +36,10 @@ Compile and install Nginx from source with optionnal modules.
 
 Just download and execute the script :
 ```
-wget https://raw.githubusercontent.com/Angristan/nginx-autoinstall/master/nginx-autoinstall.sh
+wget https://raw.githubusercontent.com/benhartwich/nginx-autoinstall/master/nginx-autoinstall.sh
 chmod +x nginx-autoinstall.sh
 ./nginx-autoinstall.sh
 ```
-
-You can check [configuration examples](https://github.com/Angristan/nginx-autoinstall/tree/master/conf) for the custom modules.
 
 ## Uninstall Nginx
 

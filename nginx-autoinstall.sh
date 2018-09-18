@@ -73,6 +73,9 @@ case $OPTION in
 		while [[ $GEOIP != "y" && $GEOIP != "n" ]]; do
 			read -p "       GeoIP [y/n]: " -e GEOIP
 		done
+		while [[ $MODSECURE != "y" && $MODSECURE != "n" ]]; do
+			read -p "       Mod Security [y/n]: " -e MODSECURE
+		done
 		while [[ $FANCYINDEX != "y" && $FANCYINDEX != "n" ]]; do
 			read -p "       Fancy index [y/n]: " -e FANCYINDEX
 		done
@@ -283,6 +286,92 @@ case $OPTION in
 			fi
 		fi
 
+		# Mod Security
+		if [[ "$MODSECURE" = 'y' ]]; then
+			# Dependence
+			apt-get install apt-utils autoconf automake build-essential git libcurl4-openssl-dev libgeoip-dev liblmdb-dev libpcre++-dev libtool libxml2-dev libyajl-dev pkgconf wget zlib1g-dev -y >> /tmp/nginx-autoinstall.log 2>&1
+			cd /usr/local/src/nginx/modules
+			mkdir mod-security
+			cd mod-security
+			echo -ne "       Downloading Mod Security    [..]\r"
+			git clone --depth 1 -b v3/master --single-branch https://github.com/SpiderLabs/ModSecurity >> /tmp/nginx-autoinstall.log 2>&1
+
+			if [ $? -eq 0 ]; then
+				echo -ne "       Downloading Mod Security    [${CGREEN}OK${CEND}]\r"
+				echo -ne "\n"
+			else
+				echo -e "       Downloading Mod Security     [${CRED}FAIL${CEND}]"
+				echo ""
+				echo "Please look at /tmp/nginx-autoinstall.log"
+				echo ""
+				exit 1
+			fi
+
+			cd ModSecurity
+			echo -ne "       Configuring Mod Security          [..]\r"
+			git submodule init >> /tmp/nginx-autoinstall.log 2>&1
+			git submodule update >> /tmp/nginx-autoinstall.log 2>&1
+			./build.sh >> /tmp/nginx-autoinstall.log 2>&1
+			./configure >> /tmp/nginx-autoinstall.log 2>&1
+
+			if [ $? -eq 0 ]; then
+				echo -ne "       Configuring Mod Security          [${CGREEN}OK${CEND}]\r"
+				echo -ne "\n"
+			else
+				echo -e "       Configuring Mod Security         [${CRED}FAIL${CEND}]"
+				echo ""
+				echo "Please look at /tmp/nginx-autoinstall.log"
+				echo ""
+				exit 1
+			fi
+
+			echo -ne "       Compiling Mod Security            [..]\r"
+			make -j $(nproc) >> /tmp/nginx-autoinstall.log 2>&1
+
+			if [ $? -eq 0 ]; then
+				echo -ne "       Compiling Mod Security           [${CGREEN}OK${CEND}]\r"
+				echo -ne "\n"
+			else
+				echo -e "       Compiling Mod Security           [${CRED}FAIL${CEND}]"
+				echo ""
+				echo "Please look at /tmp/nginx-autoinstall.log"
+				echo ""
+				exit 1
+			fi
+
+			# Mod Security install
+			echo -ne "       Installing Mod Security           [..]\r"
+			make install >> /tmp/nginx-autoinstall.log 2>&1
+
+			if [ $? -eq 0 ]; then
+				echo -ne "       Installing Mod Security           [${CGREEN}OK${CEND}]\r"
+				echo -ne "\n"
+			else
+				echo -e "       Installing Mod Security           [${CRED}FAIL${CEND}]"
+				echo ""
+				echo "Please look at /tmp/nginx-autoinstall.log"
+				echo ""
+				exit 1
+			fi
+			# Mod Security Connector
+			cd /usr/local/src/nginx/modules
+			mkdir mod-security-nginx
+			cd mod-security-nginx
+			echo -ne "       Downloading Mod Security    [..]\r"
+			git clone --depth 1 https://github.com/SpiderLabs/ModSecurity-nginx.git >> /tmp/nginx-autoinstall.log 2>&1
+
+			if [ $? -eq 0 ]; then
+				echo -ne "       Downloading Mod Security Connector    [${CGREEN}OK${CEND}]\r"
+				echo -ne "\n"
+			else
+				echo -e "       Downloading Mod Security Connector    [${CRED}FAIL${CEND}]"
+				echo ""
+				echo "Please look at /tmp/nginx-autoinstall.log"
+				echo ""
+				exit 1
+			fi
+		fi
+
 		# Cache Purge
 		if [[ "$CACHEPURGE" = 'y' ]]; then
 			cd /usr/local/src/nginx/modules
@@ -478,6 +567,15 @@ case $OPTION in
 			NGINX_MODULES=$(echo $NGINX_MODULES; echo "--with-http_geoip_module")
 		fi
 
+		# Mod Security
+		if [[ "$MODSECURE" = 'y' ]]; then
+			mkdir /etc/nginx/modsec >> /tmp/nginx-autoinstall.log 2>&1
+			wget -P /etc/nginx/modsec/ https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v3/master/modsecurity.conf-recommended >> /tmp/nginx-autoinstall.log 2>&1
+			mv /etc/nginx/modsec/modsecurity.conf-recommended /etc/nginx/modsec/modsecurity.conf >> /tmp/nginx-autoinstall.log 2>&1
+			sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/' /etc/nginx/modsec/modsecurity.conf >> /tmp/nginx-autoinstall.log 2>&1
+			NGINX_MODULES=$(echo $NGINX_MODULES; echo "--add-module=/usr/local/src/nginx/modules/mod-security-nginx/ModSecurity-nginx/")
+		fi
+
 		# OpenSSL
 		if [[ "$OPENSSL" = 'y' ]]; then
 			NGINX_MODULES=$(echo $NGINX_MODULES; echo "--with-openssl=/usr/local/src/nginx/modules/openssl-${OPENSSL_VER}")
@@ -505,13 +603,13 @@ case $OPTION in
 				exit 1
 			fi
 		fi
-		
+
 		# Fancy index
 		if [[ "$FANCYINDEX" = 'y' ]]; then
 			git clone --quiet https://github.com/aperezdc/ngx-fancyindex.git /usr/local/src/nginx/modules/fancyindex >> /tmp/nginx-autoinstall.log 2>&1
 			NGINX_MODULES=$(echo $NGINX_MODULES; echo --add-module=/usr/local/src/nginx/modules/fancyindex)
 		fi
-		
+
 		# We configure Nginx
 		echo -ne "       Configuring Nginx              [..]\r"
 		./configure $NGINX_OPTIONS $NGINX_MODULES >> /tmp/nginx-autoinstall.log 2>&1
@@ -601,7 +699,7 @@ case $OPTION in
 			echo ""
 			exit 1
 		fi
-		
+
 		if [[ $(lsb_release -si) == "Debian" ]] || [[ $(lsb_release -si) == "Ubuntu" ]]
 		then
 			echo -ne "       Blocking nginx from APT        [..]\r"
@@ -610,7 +708,7 @@ case $OPTION in
 			echo -ne "       Blocking nginx from APT        [${CGREEN}OK${CEND}]\r"
 			echo -ne "\n"
 		fi
-		
+
 		# Removing temporary Nginx and modules files
 		echo -ne "       Removing Nginx files           [..]\r"
 		rm -r /usr/local/src/nginx >> /tmp/nginx-autoinstall.log 2>&1
