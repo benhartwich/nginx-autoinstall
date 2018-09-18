@@ -28,6 +28,7 @@ Compile and install Nginx from source with optionnal modules.
 - [ngx_headers_more](https://github.com/openresty/headers-more-nginx-module) (Custom HTTP headers)
 - [GeoIP](http://dev.maxmind.com/geoip/geoip2/geolite2/) (GeoIP module and databases)
 - [Mod Security](https://github.com/SpiderLabs/ModSecurity) (web application firewall)
+- [OWASP Mod Security CSR](https://github.com/SpiderLabs/owasp-modsecurity-crs) (OWASP ModSecurity Core Rule Set)
 - [Cloudflare's TLS Dynamic Records Resizing patch](https://github.com/cloudflare/sslconfig/blob/master/patches/nginx__1.11.5_dynamic_tls_records.patch) (Optmize lantency and throughput for TLS exchanges)
 - [ngx_cache_purge](https://github.com/FRiCKLE/ngx_cache_purge) (Purge content from FastCGI, proxy, SCGI and uWSGI caches)
 - [ngx-fancyindex](https://github.com/aperezdc/ngx-fancyindex) (Fancy indexes module)

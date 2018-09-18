@@ -19,6 +19,7 @@ LIBRESSL_VER=2.7.4
 OPENSSL_VER=1.1.0h
 NPS_VER=1.13.35.2
 HEADERMOD_VER=0.33
+OWASP_VER=3.0.2
 
 # Clear log file
 rm /tmp/nginx-autoinstall.log
@@ -74,7 +75,7 @@ case $OPTION in
 			read -p "       GeoIP [y/n]: " -e GEOIP
 		done
 		while [[ $MODSECURE != "y" && $MODSECURE != "n" ]]; do
-			read -p "       Mod Security [y/n]: " -e MODSECURE
+			read -p "       Mod Security + OWASP $OWASP_VER [y/n]: " -e MODSECURE
 		done
 		while [[ $FANCYINDEX != "y" && $FANCYINDEX != "n" ]]; do
 			read -p "       Fancy index [y/n]: " -e FANCYINDEX
@@ -353,6 +354,7 @@ case $OPTION in
 				echo ""
 				exit 1
 			fi
+
 			# Mod Security Connector
 			cd /usr/local/src/nginx/modules
 			mkdir mod-security-nginx
@@ -365,6 +367,29 @@ case $OPTION in
 				echo -ne "\n"
 			else
 				echo -e "       Downloading Mod Security Connector    [${CRED}FAIL${CEND}]"
+				echo ""
+				echo "Please look at /tmp/nginx-autoinstall.log"
+				echo ""
+				exit 1
+			fi
+
+			# Mod Security OWASP
+			cd /usr/local/src/nginx/modules
+			wget https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/v${OWASP_VER}.tar.gz >> /tmp/nginx-autoinstall.log 2>&1 
+			tar -xzvf v${OWASP_VER}.tar.gz >> /tmp/nginx-autoinstall.log 2>&1
+			mv owasp-modsecurity-crs-${OWASP_VER} owasp-modsecurity-crs >> /tmp/nginx-autoinstall.log 2>&1
+			if [ -d "/usr/local/owasp-modsecurity-crs" ]; then
+				rm -R /usr/local/owasp-modsecurity-crs  >> /tmp/nginx-autoinstall.log 2>&1
+			fi
+			mv owasp-modsecurity-crs /usr/local/ >> /tmp/nginx-autoinstall.log 2>&1
+			cd /usr/local/owasp-modsecurity-crs >> /tmp/nginx-autoinstall.log 2>&1
+			cp crs-setup.conf.example crs-setup.conf >> /tmp/nginx-autoinstall.log 2>&1
+
+			if [ $? -eq 0 ]; then
+				echo -ne "       Downloading Mod Security OWASP    [${CGREEN}OK${CEND}]\r"
+				echo -ne "\n"
+			else
+				echo -e "       Downloading Mod Security OWASP    [${CRED}FAIL${CEND}]"
 				echo ""
 				echo "Please look at /tmp/nginx-autoinstall.log"
 				echo ""
@@ -572,6 +597,7 @@ case $OPTION in
 			mkdir /etc/nginx/modsec >> /tmp/nginx-autoinstall.log 2>&1
 			wget -P /etc/nginx/modsec/ https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v3/master/modsecurity.conf-recommended >> /tmp/nginx-autoinstall.log 2>&1
 			mv /etc/nginx/modsec/modsecurity.conf-recommended /etc/nginx/modsec/modsecurity.conf >> /tmp/nginx-autoinstall.log 2>&1
+			wget -P /etc/nginx/modsec/ https://raw.githubusercontent.com/benhartwich/nginx-autoinstall/master/conf/firewall.conf >> /tmp/nginx-autoinstall.log 2>&1
 			sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/' /etc/nginx/modsec/modsecurity.conf >> /tmp/nginx-autoinstall.log 2>&1
 			NGINX_MODULES=$(echo $NGINX_MODULES; echo "--add-module=/usr/local/src/nginx/modules/mod-security-nginx/ModSecurity-nginx/")
 		fi
