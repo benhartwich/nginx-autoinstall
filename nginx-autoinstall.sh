@@ -16,7 +16,7 @@ fi
 NGINX_MAINLINE_VER=1.15.4
 NGINX_STABLE_VER=1.14.0
 LIBRESSL_VER=2.7.4
-OPENSSL_VER=1.1.0h
+OPENSSL_VER=1.1.1
 NPS_VER=1.13.35.2
 HEADERMOD_VER=0.33
 OWASP_VER=3.0.2
@@ -79,9 +79,6 @@ case $OPTION in
 		done
 		while [[ $FANCYINDEX != "y" && $FANCYINDEX != "n" ]]; do
 			read -p "       Fancy index [y/n]: " -e FANCYINDEX
-		done
-		while [[ $TCP != "y" && $TCP != "n" ]]; do
-			read -p "       Cloudflare's TLS Dynamic Record Resizing patch [y/n]: " -e TCP
 		done
 		while [[ $CACHEPURGE != "y" && $CACHEPURGE != "n" ]]; do
 			read -p "       ngx_cache_purge [y/n]: " -e CACHEPURGE
@@ -605,29 +602,6 @@ case $OPTION in
 		# OpenSSL
 		if [[ "$OPENSSL" = 'y' ]]; then
 			NGINX_MODULES=$(echo $NGINX_MODULES; echo "--with-openssl=/usr/local/src/nginx/modules/openssl-${OPENSSL_VER}")
-		fi
-
-		# Cache Purge
-		if [[ "$CACHEPURGE" = 'y' ]]; then
-			NGINX_MODULES=$(echo $NGINX_MODULES; echo "--add-module=/usr/local/src/nginx/modules/ngx_cache_purge")
-		fi
-
-		# Cloudflare's TLS Dynamic Record Resizing patch
-		if [[ "$TCP" = 'y' ]]; then
-			echo -ne "       TLS Dynamic Records support    [..]\r"
-			wget https://raw.githubusercontent.com/cloudflare/sslconfig/master/patches/nginx__1.11.5_dynamic_tls_records.patch >> /tmp/nginx-autoinstall.log 2>&1
-			patch -p1 < nginx__1.11.5_dynamic_tls_records.patch >> /tmp/nginx-autoinstall.log 2>&1
-
-			if [ $? -eq 0 ]; then
-				echo -ne "       TLS Dynamic Records support    [${CGREEN}OK${CEND}]\r"
-				echo -ne "\n"
-			else
-				echo -e "       TLS Dynamic Records support    [${CRED}FAIL${CEND}]"
-				echo ""
-				echo "Please look at /tmp/nginx-autoinstall.log"
-				echo ""
-				exit 1
-			fi
 		fi
 
 		# Fancy index
