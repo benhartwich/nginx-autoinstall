@@ -603,6 +603,11 @@ case $OPTION in
 		if [[ "$OPENSSL" = 'y' ]]; then
 			NGINX_MODULES=$(echo $NGINX_MODULES; echo "--with-openssl=/usr/local/src/nginx/modules/openssl-${OPENSSL_VER}")
 		fi
+		
+		# Cache Purge
+		if [[ "$CACHEPURGE" = 'y' ]]; then
+			NGINX_MODULES=$(echo $NGINX_MODULES; echo "--add-module=/usr/local/src/nginx/modules/ngx_cache_purge")
+		fi
 
 		# Fancy index
 		if [[ "$FANCYINDEX" = 'y' ]]; then
