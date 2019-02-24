@@ -52,8 +52,8 @@ Add this into your http block to enable the patch:
 Add the path of the 2 GeoIP databases to your http block:
 
 ```
-geoip_country  /opt/geoip-db/GeoIP-Country.dat;
-geoip_city     /opt/geoip-db/GeoIP-City.dat;
+geoip_country /opt/geoip/GeoLite2-Country.mmdb;
+geoip_city /opt/geoip/GeoLite2-City.mmdb;
 ```
 
 ### Logrotate
