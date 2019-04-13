@@ -7,7 +7,7 @@ if [[ "$EUID" -ne 0 ]]; then
 fi
 
 # Variables
-NGINX_MAINLINE_VER=1.15.10
+NGINX_MAINLINE_VER=1.15.11
 NGINX_STABLE_VER=1.14.2
 LIBRESSL_VER=2.7.5
 OPENSSL_VER=1.1.1
@@ -16,6 +16,7 @@ HEADERMOD_VER=0.33
 LIBMAXMINDDB_VER=1.3.2
 GEOIP2_VER=3.2
 OWASP_VER=3.1.0
+WEBDAV=${WEBDAV:-n}
 
 clear
 echo ""
@@ -76,6 +77,9 @@ case $OPTION in
 		while [[ $CACHEPURGE != "y" && $CACHEPURGE != "n" ]]; do
 			read -p "       ngx_cache_purge [y/n]: " -e CACHEPURGE
 		done
+		while [[ $WEBDAV != "y" && $WEBDAV != "n" ]]; do
+			read -p "       nginx WebDAV [y/n]: " -e WEBDAV
+		done
 		echo ""
 		echo "Choose your OpenSSL implementation :"
 		echo "   1) System's OpenSSL ($(openssl version | cut -c9-14))"
@@ -104,7 +108,7 @@ case $OPTION in
 
 		# Dependencies
 		apt-get update
-		apt-get install -y build-essential ca-certificates wget curl libpcre3 libpcre3-dev autoconf unzip automake libtool tar git libssl-dev zlib1g-dev uuid-dev lsb-release
+		apt-get install -y build-essential ca-certificates wget curl libpcre3 libpcre3-dev autoconf unzip automake libtool tar git libssl-dev zlib1g-dev uuid-dev lsb-release libxml2-dev libxslt1-dev
 
 		# PageSpeed
 		if [[ "$PAGESPEED" = 'y' ]]; then
@@ -329,6 +333,11 @@ case $OPTION in
 		if [[ "$FANCYINDEX" = 'y' ]]; then
 			git clone --quiet https://github.com/aperezdc/ngx-fancyindex.git /usr/local/src/nginx/modules/fancyindex
 			NGINX_MODULES=$(echo "$NGINX_MODULES"; echo --add-module=/usr/local/src/nginx/modules/fancyindex)
+		fi
+		
+		if [[ "$WEBDAV" = 'y' ]]; then
+			git clone --quiet https://github.com/arut/nginx-dav-ext-module.git /usr/local/src/nginx/modules/nginx-dav-ext-module
+			NGINX_MODULES=$(echo "$NGINX_MODULES"; echo --with-http_dav_module --add-module=/usr/local/src/nginx/modules/nginx-dav-ext-module)
 		fi
 
 		# We configure Nginx
