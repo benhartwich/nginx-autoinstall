@@ -7,7 +7,7 @@ if [[ "$EUID" -ne 0 ]]; then
 fi
 
 # Variables
-NGINX_MAINLINE_VER=1.17.0
+NGINX_MAINLINE_VER=1.17.1
 NGINX_STABLE_VER=1.16.0
 LIBRESSL_VER=2.9.2
 OPENSSL_VER=1.1.1
@@ -17,6 +17,7 @@ LIBMAXMINDDB_VER=1.3.2
 GEOIP2_VER=3.2
 OWASP_VER=3.1.0
 WEBDAV=${WEBDAV:-n}
+VTS=${VTS:-n}
 
 clear
 echo ""
@@ -79,6 +80,9 @@ case $OPTION in
 		done
 		while [[ $WEBDAV != "y" && $WEBDAV != "n" ]]; do
 			read -p "       nginx WebDAV [y/n]: " -e WEBDAV
+		done
+		while [[ $VTS != "y" && $VTS != "n" ]]; do
+			read -p "       nginx VTS [y/n]: " -e VTS
 		done
 		echo ""
 		echo "Choose your OpenSSL implementation :"
@@ -281,7 +285,9 @@ case $OPTION in
 		--with-http_slice_module \
 		--with-http_stub_status_module \
 		--with-http_realip_module \
-		--with-http_image_filter_module"
+		--with-http_image_filter_module \	
+		--with-http_realip_module \
+		--with-http_sub_module"
 
 		# Optional modules
 		# LibreSSL
@@ -338,6 +344,10 @@ case $OPTION in
 		if [[ "$WEBDAV" = 'y' ]]; then
 			git clone --quiet https://github.com/arut/nginx-dav-ext-module.git /usr/local/src/nginx/modules/nginx-dav-ext-module
 			NGINX_MODULES=$(echo "$NGINX_MODULES"; echo --with-http_dav_module --add-module=/usr/local/src/nginx/modules/nginx-dav-ext-module)
+		fi
+		if [[ "$VTS" = 'y' ]]; then
+			git clone --quiet https://github.com/vozlt/nginx-module-vts.git /usr/local/src/nginx/modules/nginx-module-vts
+			NGINX_MODULES=$(echo "$NGINX_MODULES"; echo --add-module=/usr/local/src/nginx/modules/nginx-module-vts)
 		fi
 
 		# We configure Nginx
